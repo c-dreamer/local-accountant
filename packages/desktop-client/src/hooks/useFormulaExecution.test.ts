@@ -22,6 +22,10 @@ vi.mock(
   () => import('#mocks/connection'),
 );
 
+// Each execution runs the formula engine three times around a chain of
+// mocked backend calls; allow for slow CI workers instead of the 1s default.
+const formulaExecuted = { timeout: 5000 };
+
 type SerializedQuery = {
   filterExpressions: ReadonlyArray<Record<string, unknown>>;
   tableOptions?: Record<string, unknown>;
@@ -194,7 +198,10 @@ describe('formula query timeframes', () => {
         { wrapper: TestProviders },
       );
 
-      await waitFor(() => expect(result.current.result).toBe(3));
+      await waitFor(
+        () => expect(result.current.result).toBe(3),
+        formulaExecuted,
+      );
       unmount();
 
       return [...queryPayloads];
@@ -260,7 +267,10 @@ describe('BALANCE_OF in query mode', () => {
       { wrapper: TestProviders },
     );
 
-    await waitFor(() => expect(result.current.result).toBe(123.45));
+    await waitFor(
+      () => expect(result.current.result).toBe(123.45),
+      formulaExecuted,
+    );
 
     const balanceQuery = queryPayloads.find(payload =>
       payload.filterExpressions.some(
@@ -279,7 +289,10 @@ describe('BALANCE_OF in query mode', () => {
       { wrapper: TestProviders },
     );
 
-    await waitFor(() => expect(result.current.result).toBe(123.45));
+    await waitFor(
+      () => expect(result.current.result).toBe(123.45),
+      formulaExecuted,
+    );
 
     const balanceQuery = queryPayloads.find(payload =>
       payload.filterExpressions.some(
@@ -298,7 +311,7 @@ describe('BALANCE_OF in query mode', () => {
       { wrapper: TestProviders },
     );
 
-    await waitFor(() => expect(result.current.result).toBe(0));
+    await waitFor(() => expect(result.current.result).toBe(0), formulaExecuted);
     expect(queryPayloads).toHaveLength(0);
   });
 });
@@ -342,14 +355,17 @@ describe('formula execution stability', () => {
       { wrapper: TestProviders },
     );
 
-    await waitFor(() => expect(result.current.result).toBe(6));
+    await waitFor(() => expect(result.current.result).toBe(6), formulaExecuted);
     expect(executionCount).toBe(1);
 
     rerender();
     rerender();
     rerender();
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(
+      () => expect(result.current.isLoading).toBe(false),
+      formulaExecuted,
+    );
     expect(executionCount).toBe(1);
   });
 
@@ -365,12 +381,12 @@ describe('formula execution stability', () => {
       },
     );
 
-    await waitFor(() => expect(result.current.result).toBe(6));
+    await waitFor(() => expect(result.current.result).toBe(6), formulaExecuted);
     expect(executionCount).toBe(1);
 
     rerender({ conditionValue: 'other-cat' });
 
-    await waitFor(() => expect(executionCount).toBe(2));
+    await waitFor(() => expect(executionCount).toBe(2), formulaExecuted);
   });
 
   it('clears the loading state for a formula that does not start with =', async () => {
