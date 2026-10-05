@@ -126,13 +126,13 @@ export function BarLineGraph({
               <Bar
                 type="monotone"
                 dataKey="y"
-                fill="#8884d8"
+                fill={theme.reportsBlue}
                 {...animationProps}
               />
               <Line
                 type="monotone"
                 dataKey="y"
-                stroke="#8884d8"
+                stroke={theme.reportsBlue}
                 {...animationProps}
               />
             </ComposedChart>

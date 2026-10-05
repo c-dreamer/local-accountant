@@ -189,7 +189,7 @@ const ActiveShapeMobile = ({
           x={cx + chartOuterRadius * Math.cos(-RADIAN * 330) + 10}
           y={ey}
           textAnchor="start"
-          fill="#999"
+          fill={theme.reportsLabel}
         >
           {`${(percent * 100).toFixed(2)}%`}
         </text>
@@ -293,7 +293,13 @@ const ActiveShapeDesktop = ({
         >
           {format(value, 'financial')}
         </FinancialText>
-        <text x={labelX} y={ey} dy={36} textAnchor={textAnchor} fill="#999">
+        <text
+          x={labelX}
+          y={ey}
+          dy={36}
+          textAnchor={textAnchor}
+          fill={theme.reportsLabel}
+        >
           {`(${(percent * 100).toFixed(2)}%)`}
         </text>
       </PrivacyFilter>
