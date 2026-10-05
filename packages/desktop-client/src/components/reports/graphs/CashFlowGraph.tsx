@@ -199,7 +199,7 @@ export function CashFlowGraph({
             isAnimationActive={false}
           />
 
-          <ReferenceLine y={0} stroke="#000" />
+          <ReferenceLine y={0} stroke={theme.pageTextLight} />
           <Bar
             dataKey="income"
             stackId="a"

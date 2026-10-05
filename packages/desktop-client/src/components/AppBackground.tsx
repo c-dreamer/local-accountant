@@ -43,9 +43,7 @@ export function AppBackground({ isLoading }: AppBackgroundProps) {
                 alignItems: 'center',
               })}
             >
-              <Block style={{ marginBottom: 20, fontSize: 18 }}>
-                {loadingText}
-              </Block>
+              <Block style={{ marginBottom: 20, fontSize: 18 }}>{item}</Block>
               <AnimatedLoading width={25} color={theme.pageText} />
             </View>
           </animated.div>
