@@ -15,6 +15,7 @@ import {
 } from '#components/budget/envelope/EnvelopeBudgetComponents';
 import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
+import { SecondaryAmount } from '#components/SecondaryAmount';
 import { useFormat } from '#hooks/useFormat';
 import { envelopeBudget } from '#spreadsheet/bindings';
 
@@ -108,6 +109,10 @@ export function ToBudgetAmount({
             </Block>
           </PrivacyFilter>
         </Tooltip>
+        <SecondaryAmount
+          value={num}
+          style={{ display: 'block', textAlign: 'center', fontSize: 12 }}
+        />
       </View>
     </View>
   );

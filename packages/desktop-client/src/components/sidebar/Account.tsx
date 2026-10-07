@@ -24,6 +24,7 @@ import { useReopenAccountMutation, useUpdateAccountMutation } from '#accounts';
 import { BalanceHistoryGraph } from '#components/accounts/BalanceHistoryGraph';
 import { Link } from '#components/common/Link';
 import { Notes } from '#components/Notes';
+import { SecondaryAmount } from '#components/SecondaryAmount';
 import { DropHighlight, useDraggable, useDroppable } from '#components/sort';
 import type { OnDragChangeCallback, OnDropCallback } from '#components/sort';
 import { CellValue } from '#components/spreadsheet/CellValue';
@@ -258,11 +259,23 @@ export function Account<FieldName extends SheetFields<'account'>>({
                 )
               }
               right={
-                balanceTestId ? (
-                  <View data-testid={balanceTestId}>{balanceCell}</View>
-                ) : (
-                  balanceCell
-                )
+                <View style={{ alignItems: 'flex-end' }}>
+                  {balanceTestId ? (
+                    <View data-testid={balanceTestId}>{balanceCell}</View>
+                  ) : (
+                    balanceCell
+                  )}
+                  {!account && (
+                    <CellValue binding={query} type="financial">
+                      {({ value }) => (
+                        <SecondaryAmount
+                          value={value}
+                          style={{ color: 'inherit', opacity: 0.7 }}
+                        />
+                      )}
+                    </CellValue>
+                  )}
+                </View>
               }
             />
           </Link>

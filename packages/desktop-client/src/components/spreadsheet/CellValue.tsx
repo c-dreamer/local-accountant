@@ -8,6 +8,8 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
+import { useSecondaryCurrency } from '#hooks/useSecondaryCurrency';
 import { useSheetName } from '#hooks/useSheetName';
 import { useSheetValue } from '#hooks/useSheetValue';
 import type {
@@ -81,14 +83,26 @@ export function CellValueText<
   ...props
 }: CellValueTextProps<SheetName, FieldName>) {
   const format = useFormat();
+  const secondaryCurrency = useSecondaryCurrency();
+  const isPrivacyEnabled = usePrivacyMode();
   const isFinancial =
     type === 'financial' ||
     type === 'financial-with-sign' ||
     type === 'financial-no-decimals';
+  // Hovering an amount shows it in the second currency, unless amounts are
+  // hidden by privacy mode. A caller's own `title` takes precedence.
+  const secondaryTitle =
+    isFinancial &&
+    secondaryCurrency &&
+    !isPrivacyEnabled &&
+    typeof value === 'number'
+      ? secondaryCurrency.format(value)
+      : undefined;
   const sharedProps = {
     style,
     'data-testid': name,
     'data-cellname': name,
+    title: secondaryTitle,
     ...props,
   };
 
