@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 import cors from 'cors';
 import express from 'express';
-import rateLimit from 'express-rate-limit';
 
 import { bootstrap } from './account-db';
 import * as accountApp from './app-account';
@@ -13,12 +12,14 @@ import * as akahuApp from './app-akahu/app-akahu.js';
 import * as corsApp from './app-cors-proxy';
 import * as enableBankingApp from './app-enablebanking/app-enablebanking';
 import * as goCardlessApp from './app-gocardless/app-gocardless';
+import { registerHealthEndpoints } from './app-health';
 import * as openidApp from './app-openid';
 import * as pluggai from './app-pluggyai/app-pluggyai';
 import * as secretApp from './app-secrets';
 import * as simpleFinApp from './app-simplefin/app-simplefin';
 import * as syncApp from './app-sync';
 import { config } from './load-config';
+import { applyRateLimiters } from './util/rate-limit';
 
 const app = express();
 
@@ -29,16 +30,9 @@ process.on('unhandledRejection', reason => {
 app.disable('x-powered-by');
 app.use(cors());
 app.set('trust proxy', config.get('trustedProxies'));
-if (process.env.NODE_ENV !== 'development') {
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000,
-      max: 500,
-      legacyHeaders: false,
-      standardHeaders: true,
-    }),
-  );
-}
+
+// Apply rate limiters (includes global rate limiter and specific route limiters)
+applyRateLimiters(app);
 
 app.use(express.json({ limit: `${config.get('upload.fileSizeLimitMB')}mb` }));
 
@@ -117,16 +111,15 @@ app.get('/info', (_req, res) => {
   });
 });
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'UP' });
-});
-
 app.get('/metrics', (_req, res) => {
   res.status(200).json({
     mem: process.memoryUsage(),
     uptime: process.uptime(),
   });
 });
+
+// Register health endpoints (includes /health, /health/live, /health/ready)
+registerHealthEndpoints(app);
 
 // The web frontend.
 // Dev mode proxies to Vite, which injects inline preamble scripts and uses
@@ -163,7 +156,7 @@ if (isDev) {
 
   app.use(
     httpProxyMiddleware.createProxyMiddleware({
-      target: 'http://localhost:3001',
+      target: `http://localhost:${config.get('webDevServerPort')}`,
       changeOrigin: true,
       ws: true,
     }),

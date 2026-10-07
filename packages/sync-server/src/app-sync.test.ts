@@ -450,6 +450,18 @@ describe('/upload-user-file', () => {
     expect(res.text).toBe('single x-actual-name is required');
   });
 
+  it('returns 400 if x-actual-name has invalid percent encoding', async () => {
+    const res = await request(app)
+      .post('/upload-user-file')
+      .set('x-actual-token', 'valid-token')
+      .set('x-actual-name', '%ZZ')
+      .set('x-actual-file-id', generateFileId())
+      .send('file content');
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.text).toBe('invalid x-actual-name');
+  });
+
   it('returns 400 if fileId is missing', async () => {
     const content = Buffer.from('file content');
     const res = await request(app)
@@ -1434,7 +1446,7 @@ describe('/sync', () => {
     expect(res.headers['x-actual-sync-method']).toEqual('simple');
   });
 
-  it('returns 500 if the request body is invalid', async () => {
+  it('returns 422 if the request body is invalid', async () => {
     const res = await request(app)
       .post('/sync')
       .set('x-actual-token', 'valid-token')
@@ -1442,10 +1454,11 @@ describe('/sync', () => {
       .set('Content-Type', 'application/actual-sync')
       .send('invalid-body');
 
-    expect(res.statusCode).toEqual(500);
+    expect(res.statusCode).toEqual(422);
     expect(res.body).toEqual({
+      details: 'invalid-sync-payload',
+      reason: 'unprocessable-entity',
       status: 'error',
-      reason: 'internal-error',
     });
   });
 
@@ -1466,6 +1479,24 @@ describe('/sync', () => {
       status: 'error',
       reason: 'unprocessable-entity',
       details: 'since-required',
+    });
+  });
+
+  it('returns 422 if since is not a valid HULC timestamp', async () => {
+    const syncRequest = createMinimalSyncRequest(
+      'file-id',
+      'group-id',
+      'key-id',
+    );
+    syncRequest.since = '2024-01-01T00:00:00.000Z';
+
+    const res = await sendSyncRequest(syncRequest);
+
+    expect(res.statusCode).toEqual(422);
+    expect(res.body).toEqual({
+      status: 'error',
+      reason: 'unprocessable-entity',
+      details: 'invalid-since-timestamp',
     });
   });
 
@@ -1606,7 +1637,7 @@ function createMinimalSyncRequest(fileId, groupId, keyId) {
     fileId,
     groupId,
     keyId,
-    since: '2024-01-01T00:00:00.000Z',
+    since: '2024-01-01T00:00:00.000Z-0000-0000000000000001',
   });
 }
 

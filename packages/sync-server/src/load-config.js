@@ -90,6 +90,12 @@ const configSchema = convict({
     default: process.env.PORT ? process.env.PORT : 5006,
     env: 'ACTUAL_PORT',
   },
+  webDevServerPort: {
+    doc: 'Port used by the frontend dev server when proxying in development.',
+    format: 'port',
+    default: 3001,
+    env: 'ACTUAL_WEB_DEV_PORT',
+  },
   hostname: {
     doc: 'Server hostname.',
     format: String,
@@ -191,6 +197,31 @@ const configSchema = convict({
       format: 'nat',
       default: 20,
       env: 'ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB',
+    },
+  },
+
+  rateLimit: {
+    doc: 'Rate limiting configuration.',
+
+    windowMs: {
+      doc: 'Rate limit window in milliseconds',
+      format: 'nat',
+      default: 60 * 1000,
+      env: 'ACTUAL_RATE_LIMIT_WINDOW_MS',
+    },
+
+    max: {
+      doc: 'Maximum requests per window',
+      format: 'nat',
+      default: 500,
+      env: 'ACTUAL_RATE_LIMIT_MAX',
+    },
+
+    uploadMax: {
+      doc: 'Maximum upload requests per window',
+      format: 'nat',
+      default: 30,
+      env: 'ACTUAL_RATE_LIMIT_UPLOAD_MAX',
     },
   },
 
@@ -338,6 +369,7 @@ configSchema.validate({ allowed: 'strict' });
 
 debug(`Project root: ${configSchema.get('projectRoot')}`);
 debug(`Port: ${configSchema.get('port')}`);
+debug(`Web dev server port: ${configSchema.get('webDevServerPort')}`);
 debug(`Hostname: ${configSchema.get('hostname')}`);
 debug(`Data directory: ${configSchema.get('dataDir')}`);
 debug(`Server files: ${configSchema.get('serverFiles')}`);
