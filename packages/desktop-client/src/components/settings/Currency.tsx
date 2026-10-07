@@ -5,7 +5,11 @@ import { Select } from '@actual-app/components/select';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
-import { currencies, getCurrency } from '@actual-app/core/shared/currencies';
+import {
+  currencies,
+  DEFAULT_CURRENCY_CODE,
+  getCurrency,
+} from '@actual-app/core/shared/currencies';
 import { css } from '@emotion/css';
 
 import { Checkbox } from '#components/forms';
@@ -70,6 +74,7 @@ export function CurrencySettings() {
         ['USD', t('US Dollar')],
         ['UYU', t('Uruguayan Peso')],
         ['UZS', t('Uzbek Soum')],
+        ['ZAR', t('South African Rand')],
       ]),
     [t],
   );
@@ -77,7 +82,7 @@ export function CurrencySettings() {
   const [defaultCurrencyCode, setDefaultCurrencyCodePref] = useSyncedPref(
     'defaultCurrencyCode',
   );
-  const selectedCurrencyCode = defaultCurrencyCode || '';
+  const selectedCurrencyCode = defaultCurrencyCode || DEFAULT_CURRENCY_CODE;
 
   const [symbolPosition, setSymbolPositionPref] = useSyncedPref(
     'currencySymbolPosition',

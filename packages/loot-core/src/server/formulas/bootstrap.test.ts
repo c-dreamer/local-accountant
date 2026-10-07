@@ -32,7 +32,7 @@ describe('formula preference bootstrap', () => {
 
   it('reloads cached user preferences after reset', async () => {
     await ensureFormulaPreferencesLoaded();
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
+    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1\u202F234,50');
 
     await db.update('preferences', {
       id: 'numberFormat',
@@ -45,15 +45,28 @@ describe('formula preference bootstrap', () => {
     expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1.234,50');
   });
 
-  it('infers number separators from locale formatting', async () => {
+  it('uses South African number separators by default', async () => {
     const preferences = await loadUserPreferencesForFormulas({
       selectedLocale: 'de-DE',
     });
 
-    expect(preferences.numberFormat).toBe('dot-comma');
+    expect(preferences.currency.code).toBe('ZAR');
+    expect(preferences.numberFormat).toBe('space-comma');
     expect(preferences.decimalPlaces).toBe(2);
-    expect(preferences.thousandsSeparator).toBe('.');
+    expect(preferences.thousandsSeparator).toBe('\u202F');
     expect(preferences.decimalSeparator).toBe(',');
+  });
+
+  it('uses South African rand when the stored currency preference is empty', async () => {
+    await db.update('preferences', {
+      id: 'defaultCurrencyCode',
+      value: '',
+    });
+
+    const preferences = await loadUserPreferencesForFormulas();
+
+    expect(preferences.currency.code).toBe('ZAR');
+    expect(preferences.numberFormat).toBe('space-comma');
   });
 
   it('loads hidden fraction preference for formula number formatting', async () => {
@@ -77,7 +90,7 @@ describe('formula preference bootstrap', () => {
 
   it('reloads cached user preferences after relevant synced preferences change', async () => {
     await ensureFormulaPreferencesLoaded();
-    expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,234.50');
+    expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1\u202F234,50');
 
     await runHandler(handlers['preferences/save'], {
       id: 'numberFormat',
@@ -90,7 +103,7 @@ describe('formula preference bootstrap', () => {
 
   it('reloads cached user preferences after hide fraction changes', async () => {
     await ensureFormulaPreferencesLoaded();
-    expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,234.50');
+    expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1\u202F234,50');
 
     await runHandler(handlers['preferences/save'], {
       id: 'hideFraction',
@@ -98,7 +111,7 @@ describe('formula preference bootstrap', () => {
     });
     await ensureFormulaPreferencesLoaded();
 
-    expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1,235');
+    expect(executeFormula('=FORMATNUMBER(1234.5)')).toBe('1\u202F235');
   });
 
   it('keeps cached user preferences after unrelated synced preferences change', async () => {
@@ -114,12 +127,12 @@ describe('formula preference bootstrap', () => {
     });
     await ensureFormulaPreferencesLoaded();
 
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
+    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1\u202F234,50');
   });
 
   it('reloads cached user preferences after language changes', async () => {
     await ensureFormulaPreferencesLoaded();
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1,234.50');
+    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1\u202F234,50');
 
     await runHandler(handlers['save-global-prefs'], {
       language: 'de-DE',
@@ -131,6 +144,6 @@ describe('formula preference bootstrap', () => {
       'language',
       'de-DE',
     );
-    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1.234,50');
+    expect(executeFormula('=FORMATNUMBER(1234.5, 2)')).toBe('1\u202F234,50');
   });
 });

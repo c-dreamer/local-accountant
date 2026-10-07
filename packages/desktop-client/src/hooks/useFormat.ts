@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { evalArithmetic } from '@actual-app/core/shared/arithmetic';
-import { getCurrency } from '@actual-app/core/shared/currencies';
+import {
+  DEFAULT_CURRENCY_CODE,
+  getCurrency,
+} from '@actual-app/core/shared/currencies';
 import type { Currency } from '@actual-app/core/shared/currencies';
 import {
   amountToInteger,
@@ -117,16 +120,16 @@ export function useFormat(): UseFormatResult {
   );
 
   const activeCurrency = useMemo(() => {
-    return getCurrency(defaultCurrencyCodePref || '');
+    return getCurrency(defaultCurrencyCodePref || DEFAULT_CURRENCY_CODE);
   }, [defaultCurrencyCodePref]);
 
   const numberFormatConfig = useMemo(
     () =>
       parseNumberFormat({
-        format: numberFormatPref,
+        format: numberFormatPref || activeCurrency.numberFormat,
         hideFraction: hideFractionPref === 'true',
       }),
-    [numberFormatPref, hideFractionPref],
+    [numberFormatPref, hideFractionPref, activeCurrency.numberFormat],
   );
 
   // Hack: keep the global number format in sync - update the settings when

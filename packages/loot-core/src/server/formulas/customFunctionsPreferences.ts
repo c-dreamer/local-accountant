@@ -1,6 +1,6 @@
 import * as asyncStorage from '#platform/server/asyncStorage';
 import { aqlQuery } from '#server/aql';
-import { getCurrency } from '#shared/currencies';
+import { DEFAULT_CURRENCY_CODE, getCurrency } from '#shared/currencies';
 import type { Currency } from '#shared/currencies';
 import type { UserPreferences } from '#shared/formulas/customFunctions';
 import { q } from '#shared/query';
@@ -14,7 +14,7 @@ type FormulaPreferencesOptions = {
 
 type CurrencySymbolPosition = 'before' | 'after';
 
-const DEFAULT_CURRENCY = getCurrency('USD');
+const DEFAULT_CURRENCY = getCurrency(DEFAULT_CURRENCY_CODE);
 const LOCALE_NUMBER_FORMAT_SAMPLE = 1_000_000.23;
 type FormulaPreferenceId =
   | 'flags.currency'
@@ -143,8 +143,7 @@ export async function loadUserPreferencesForFormulas({
 
     const numberFormat = numberFormatValue
       ? numberFormatValue
-      : currencyFromPreference?.numberFormat ||
-        getNumberFormatFromLocale(locale);
+      : currency.numberFormat || getNumberFormatFromLocale(locale);
 
     // Get number format settings
     const numberFormatSettings = getNumberFormat({

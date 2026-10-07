@@ -7,6 +7,10 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { tokens } from '@actual-app/components/tokens';
 import { View } from '@actual-app/components/view';
+import {
+  DEFAULT_CURRENCY_CODE,
+  getCurrency,
+} from '@actual-app/core/shared/currencies';
 import { numberFormats } from '@actual-app/core/shared/util';
 import type { SyncedPrefs } from '@actual-app/core/types/prefs';
 import { css } from '@emotion/css';
@@ -41,7 +45,12 @@ export function FormatSettings() {
   const dateFormat = useDateFormat() || 'MM/dd/yyyy';
   const [, setDateFormatPref] = useSyncedPref('dateFormat');
   const [_numberFormat] = useSyncedPref('numberFormat');
-  const numberFormat = _numberFormat || 'comma-dot';
+  const [defaultCurrencyCode] = useSyncedPref('defaultCurrencyCode');
+  // Match useFormat: without a saved format, the currency's format applies.
+  const numberFormat =
+    _numberFormat ||
+    getCurrency(defaultCurrencyCode || DEFAULT_CURRENCY_CODE).numberFormat ||
+    'comma-dot';
   const [hideFraction, setHideFractionPref] = useSyncedPref('hideFraction');
 
   const daysOfWeek = useDaysOfWeek();
