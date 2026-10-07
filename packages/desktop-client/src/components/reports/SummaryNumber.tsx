@@ -10,7 +10,9 @@ import { FinancialText } from '#components/FinancialText';
 import { PrivacyFilter } from '#components/PrivacyFilter';
 import { useFormat } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import { useResizeObserver } from '#hooks/useResizeObserver';
+import { useSecondaryCurrency } from '#hooks/useSecondaryCurrency';
 
 import { ReportCardValueSkeleton } from './ReportCardValueSkeleton';
 
@@ -41,7 +43,16 @@ export function SummaryNumber({
   const [hasSized, setHasSized] = useState(false);
   const refDiv = useRef<HTMLDivElement>(null);
   const format = useFormat();
+  const secondaryCurrency = useSecondaryCurrency();
+  const isPrivacyEnabled = usePrivacyMode();
   const isNumericValue = Number.isFinite(value);
+  const secondaryTitle =
+    secondaryCurrency &&
+    !isPrivacyEnabled &&
+    isNumericValue &&
+    contentType !== 'percentage'
+      ? secondaryCurrency.format(Math.abs(Math.round(value)))
+      : undefined;
 
   let displayAmount =
     contentType === 'percentage'
@@ -114,7 +125,7 @@ export function SummaryNumber({
           {!hasSized ? (
             <ReportCardValueSkeleton />
           ) : (
-            <FinancialText aria-hidden="true">
+            <FinancialText aria-hidden="true" title={secondaryTitle}>
               <PrivacyFilter>{displayAmount}</PrivacyFilter>
             </FinancialText>
           )}

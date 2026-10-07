@@ -37,6 +37,7 @@ import { FormatSettings } from './Format';
 import { LanguageSettings } from './LanguageSettings';
 import { RepairTransactions } from './RepairTransactions';
 import { ResetCache, ResetSync } from './Reset';
+import { SecondaryCurrencySettings } from './SecondaryCurrency';
 import { ThemeSettings } from './Themes';
 import { AdvancedToggle, Setting } from './UI';
 
@@ -259,6 +260,7 @@ export function Settings() {
         <About />
         <ThemeSettings />
         <FormatSettings />
+        <SecondaryCurrencySettings />
         {isCurrencyExperimentalEnabled && <CurrencySettings />}
         <LanguageSettings />
         <AuthSettings />
