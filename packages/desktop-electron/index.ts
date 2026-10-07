@@ -42,10 +42,23 @@ import {
 } from './window-state';
 import './security';
 
+// Preserve the default user-data directory from existing Actual installs even
+// though the packaged display name is now LAccountant.
+const LEGACY_USER_DATA_DIR_NAME = 'Actual';
+
 const BUILD_ROOT = `${__dirname}/..`;
 
 const isPlaywrightTest = process.env.EXECUTION_CONTEXT === 'playwright';
 const isDev = !isPlaywrightTest && !app.isPackaged; // dev mode if not packaged and not playwright
+
+if (isPlaywrightTest && process.env.ACTUAL_ELECTRON_APP_DATA_DIR) {
+  app.setPath('appData', process.env.ACTUAL_ELECTRON_APP_DATA_DIR);
+}
+
+app.setPath(
+  'userData',
+  path.join(app.getPath('appData'), LEGACY_USER_DATA_DIR_NAME),
+);
 
 process.env.lootCoreScript = isDev
   ? '@actual-app/core/lib-dist/electron/bundle.desktop.js' // serve from local output in development (provides hot-reloading)
@@ -515,7 +528,7 @@ async function createWindow() {
     y: windowState.y,
     width: windowState.width,
     height: windowState.height,
-    title: 'Actual',
+    title: app.getName(),
     webPreferences: {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,

@@ -38,9 +38,16 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
     }
 
     const app = await _electron.launch({
-      args: ['.'],
+      args: [
+        '.',
+        `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
+      ],
       env: {
         ...process.env,
+        ACTUAL_ELECTRON_APP_DATA_DIR: path.resolve(
+          testDataDir,
+          'electron-app-data',
+        ),
         ACTUAL_DOCUMENT_DIR: documentDir,
         ACTUAL_DATA_DIR: testDataDir,
         EXECUTION_CONTEXT: 'playwright',
