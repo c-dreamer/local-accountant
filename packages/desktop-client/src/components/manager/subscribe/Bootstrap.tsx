@@ -22,6 +22,7 @@ export function Bootstrap() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [error, setError] = useState(null);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const refreshLoginMethods = useRefreshLoginMethods();
 
   const { checked } = useBootstrapped();
@@ -59,7 +60,15 @@ export function Bootstrap() {
   }
 
   async function onDemo() {
-    await dispatch(createBudget({ demoMode: true }));
+    setDemoError(null);
+    try {
+      await dispatch(createBudget({ demoMode: true })).unwrap();
+    } catch (error) {
+      console.error('Failed to create demo budget:', error);
+      setDemoError(
+        error instanceof Error ? error.message : t('Unable to create demo'),
+      );
+    }
   }
 
   if (!checked) {
@@ -97,6 +106,19 @@ export function Bootstrap() {
           }}
         >
           {getErrorMessage(error)}
+        </Text>
+      )}
+
+      {demoError && (
+        <Text
+          style={{
+            marginTop: 20,
+            color: theme.errorText,
+            borderRadius: 4,
+            fontSize: 15,
+          }}
+        >
+          <Trans>Unable to create demo: {{ demoError }}</Trans>
         </Text>
       )}
 
