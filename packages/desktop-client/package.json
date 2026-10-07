@@ -130,7 +130,7 @@
     "#util/*": "./src/util/*.ts"
   },
   "scripts": {
-    "start": "cross-env PORT=3001 vite",
+    "start": "vite",
     "start:browser": "cross-env ./bin/watch-browser",
     "watch": "cross-env BROWSER=none yarn start",
     "build": "vite build",

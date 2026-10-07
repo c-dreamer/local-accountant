@@ -3,7 +3,7 @@
 ROOT=`dirname $0`
 cd "$ROOT/.."
 
-export PORT=3001
+export PORT="${ACTUAL_WEB_DEV_PORT:-3001}"
 export REACT_APP_BACKEND_WORKER_HASH="dev"
 
 yarn start --mode=browser

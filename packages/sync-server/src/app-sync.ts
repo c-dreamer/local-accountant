@@ -8,6 +8,7 @@ import {
   fromBinary,
   SyncRequestSchema,
   SyncResponseSchema,
+  Timestamp,
   toBinary,
 } from '@actual-app/crdt';
 import type { Request, Response } from 'express';
@@ -141,8 +142,11 @@ app.post('/sync', async (req, res): Promise<void> => {
     requestPb = fromBinary(SyncRequestSchema, req.body);
   } catch (e) {
     console.log('Error parsing sync request', e);
-    res.status(500);
-    res.send({ status: 'error', reason: 'internal-error' });
+    res.status(422).send({
+      details: 'invalid-sync-payload',
+      reason: 'unprocessable-entity',
+      status: 'error',
+    });
     return;
   }
 
@@ -155,6 +159,16 @@ app.post('/sync', async (req, res): Promise<void> => {
   if (!since) {
     res.status(422).send({
       details: 'since-required',
+      reason: 'unprocessable-entity',
+      status: 'error',
+    });
+    return;
+  }
+
+  // Sync timestamps are strings to preserve HULC precision and ordering.
+  if (typeof since !== 'string' || !Timestamp.parse(since)) {
+    res.status(422).send({
+      details: 'invalid-since-timestamp',
       reason: 'unprocessable-entity',
       status: 'error',
     });
@@ -232,6 +246,15 @@ app.post('/user-get-key', (req, res) => {
 app.post('/user-create-key', (req, res) => {
   const { fileId, keyId, keySalt, testContent } = req.body || {};
 
+  // Validate required fields
+  if (!fileId || typeof fileId !== 'string') {
+    res.status(400).send('fileId is required and must be a string');
+    return;
+  }
+  if (!isValidFileId(fileId)) {
+    res.status(400).send('invalid fileId');
+    return;
+  }
   const filesService = new FilesService(getAccountDb());
   const file = verifyFileExists(fileId, filesService, res, 'file-not-found');
 
@@ -243,6 +266,21 @@ app.post('/user-create-key', (req, res) => {
   if (fileAccessError) {
     res.status(403);
     res.send(fileAccessError);
+    return;
+  }
+
+  // Field checks follow the existence and ownership checks so missing files
+  // keep returning `file-not-found`.
+  if (!keyId || typeof keyId !== 'string') {
+    res.status(400).send('keyId is required and must be a string');
+    return;
+  }
+  if (!keySalt || typeof keySalt !== 'string') {
+    res.status(400).send('keySalt is required and must be a string');
+    return;
+  }
+  if (!testContent || typeof testContent !== 'string') {
+    res.status(400).send('testContent is required and must be a string');
     return;
   }
 
@@ -303,7 +341,13 @@ app.post('/upload-user-file', async (req, res) => {
     return;
   }
 
-  const name = decodeURIComponent(req.headers['x-actual-name']);
+  let name: string;
+  try {
+    name = decodeURIComponent(req.headers['x-actual-name']);
+  } catch {
+    res.status(400).send('invalid x-actual-name');
+    return;
+  }
   const fileId = req.headers['x-actual-file-id'];
 
   if (!fileId || typeof fileId !== 'string') {
@@ -330,10 +374,25 @@ app.post('/upload-user-file', async (req, res) => {
     groupId = groupIdHeader;
   }
 
-  const keyId =
-    encryptMeta && typeof encryptMeta === 'string'
-      ? JSON.parse(encryptMeta).keyId
-      : null;
+  // Validate encryptMeta header if provided
+  let keyId: string | null = null;
+  // `extractSingleHeader` returns null when the header is absent, which is
+  // the normal case for unencrypted files.
+  if (encryptMeta !== null) {
+    try {
+      const parsed = JSON.parse(encryptMeta);
+      if (typeof parsed.keyId !== 'string') {
+        res
+          .status(400)
+          .send('x-actual-encrypt-meta must contain a string keyId');
+        return;
+      }
+      keyId = parsed.keyId;
+    } catch {
+      res.status(400).send('x-actual-encrypt-meta must be valid JSON');
+      return;
+    }
+  }
 
   const filesService = new FilesService(getAccountDb());
   let currentFile;
@@ -460,6 +519,20 @@ app.get('/download-user-file', async (req, res) => {
 
 app.post('/update-user-filename', (req, res) => {
   const { fileId, name } = req.body || {};
+
+  // Validate required fields
+  if (!fileId || typeof fileId !== 'string') {
+    res.status(400).send('fileId is required and must be a string');
+    return;
+  }
+  if (!isValidFileId(fileId)) {
+    res.status(400).send('invalid fileId');
+    return;
+  }
+  if (!name || typeof name !== 'string') {
+    res.status(400).send('name is required and must be a string');
+    return;
+  }
 
   const filesService = new FilesService(getAccountDb());
   const file = verifyFileExists(fileId, filesService, res, 'file-not-found');

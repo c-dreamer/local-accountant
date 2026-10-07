@@ -1,5 +1,17 @@
 Actual on the web
 
+## Development port
+
+The browser dev server and sync server proxy default to port 3001. If that port
+is already in use, choose another port for both with
+`ACTUAL_WEB_DEV_PORT=3003 yarn start:server-dev`.
+
+## Browser build
+
+To build the frontend served by the sync server, run
+`yarn build:browser --skip-translations` from the repository root. The
+workspace-level `build` script uses the Electron renderer configuration.
+
 ## E2E tests
 
 E2E (end-to-end) tests use [Playwright](https://playwright.dev/). Running them requires an Actual server to be running either locally or on a remote server.
