@@ -55,6 +55,8 @@ The Actual app is split up into a few packages:
 - desktop-client - The desktop UI
 - desktop-electron - The desktop app
 
+For pinned desktop build versions, Linux package instructions, and data compatibility notes, see the [LAccountant desktop build handoff](packages/desktop-electron/BUILDING.md).
+
 More information on the project structure is available in our [community documentation](https://actualbudget.org/docs/contributing/project-details).
 
 ### Feature Requests
