@@ -10,7 +10,7 @@ import { View } from '@actual-app/components/view';
 import { useLoginMethod, useMultiuserEnabled } from '#components/ServerContext';
 import { useSyncServerStatus } from '#hooks/useSyncServerStatus';
 import { pushModal } from '#modals/modalsSlice';
-import { useDispatch } from '#redux';
+import { useDispatch, useSelector } from '#redux';
 
 import { Setting } from './UI';
 
@@ -21,9 +21,10 @@ export function AuthSettings() {
   const loginMethod = useLoginMethod();
   const dispatch = useDispatch();
   const serverStatus = useSyncServerStatus();
+  const userData = useSelector(state => state.user.data);
 
-  // Hide the OpenID block entirely when no server is configured
-  if (serverStatus === 'no-server') {
+  // Authentication settings only apply to an authenticated server user.
+  if (serverStatus === 'no-server' || !userData) {
     return null;
   }
 

@@ -155,20 +155,22 @@ export const createBudget = createAppAsyncThunk(
       }),
     );
 
-    if (demoMode) {
-      await send('create-demo-budget');
-    } else {
-      await send('create-budget', { testMode });
+    try {
+      if (demoMode) {
+        await send('create-demo-budget');
+      } else {
+        await send('create-budget', { testMode });
+      }
+
+      dispatch(closeModal());
+
+      await dispatch(loadAllFiles());
+      await dispatch(loadPrefs());
+    } finally {
+      // Keep the manager visible through successful loading, but always clear
+      // the spinner if creating or loading the budget fails.
+      dispatch(setAppState({ loadingText: null }));
     }
-
-    dispatch(closeModal());
-
-    await dispatch(loadAllFiles());
-    await dispatch(loadPrefs());
-
-    // Set the loadingText to null after we've loaded the budget prefs
-    // so that the existing manager page doesn't flash
-    dispatch(setAppState({ loadingText: null }));
   },
 );
 

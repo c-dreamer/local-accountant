@@ -26,6 +26,32 @@ const DATA_FOLDER_DOCS_URL =
 // location is missing or invalid".
 const ACCESS_DENIED_CODES = ['EPERM', 'EACCES'];
 
+function restartApp() {
+  // Electron must relaunch the process; its `reload` is not implemented.
+  if (isElectron() && typeof window.Actual?.relaunch === 'function') {
+    window.Actual.relaunch();
+    return;
+  }
+
+  // In the browser, `reload` also unregisters the service worker.
+  if (typeof window.Actual?.reload === 'function') {
+    void window.Actual.reload();
+    return;
+  }
+
+  // Recover from a stale service worker when the browser preload itself failed.
+  const registration = window.navigator.serviceWorker?.getRegistration('/');
+  if (!registration) {
+    window.location.reload();
+    return;
+  }
+
+  void registration
+    .then(serviceWorkerRegistration => serviceWorkerRegistration?.unregister())
+    .catch(() => undefined)
+    .finally(() => window.location.reload());
+}
+
 type AppError = Error & {
   type?: string;
   IDBFailure?: boolean;
@@ -386,7 +412,7 @@ export function FatalError({ error: rawError }: FatalErrorProps) {
         <Paragraph>
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
             {isDocumentDirError && isElectron() && <ChooseDocumentDirButton />}
-            <Button onPress={() => window.Actual.relaunch()}>
+            <Button onPress={restartApp}>
               <Trans>Restart app</Trans>
             </Button>
           </View>

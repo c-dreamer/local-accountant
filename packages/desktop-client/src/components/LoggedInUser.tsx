@@ -156,6 +156,17 @@ export function LoggedInUser({ hideIfNoServer, style }: LoggedInUserProps) {
       };
     }
 
+    if (!userData) {
+      return {
+        message: t('Sign in'),
+        tooltip: (
+          <Trans>
+            Sign in with a server account to sync this budget across devices.
+          </Trans>
+        ),
+      };
+    }
+
     return {
       message: t('Server online'),
       tooltip: (

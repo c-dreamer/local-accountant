@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cmpSemanticVersion } from './versions';
+import { cmpSemanticVersion, getIsOutdated } from './versions';
 
 describe('cmpSemanticVersion', () => {
   it('compares major, minor and patch numerically', () => {
@@ -12,5 +12,18 @@ describe('cmpSemanticVersion', () => {
 
   it('ignores a leading "v"', () => {
     expect(cmpSemanticVersion('v26.8.1', '26.8.1')).toBe(0);
+  });
+});
+
+describe('getIsOutdated', () => {
+  it('does not treat a missing browser version as an application failure', () => {
+    const actual = window.Actual;
+    window.Actual = undefined as unknown as typeof window.Actual;
+
+    try {
+      expect(getIsOutdated('26.8.2')).toBe(false);
+    } finally {
+      window.Actual = actual;
+    }
   });
 });

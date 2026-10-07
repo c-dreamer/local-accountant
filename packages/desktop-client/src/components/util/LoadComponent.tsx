@@ -50,6 +50,9 @@ function LoadComponentInner<K extends string>({
       },
     ).catch(e => {
       if (!isUnmounted) {
+        // Keep the browser console useful when a lazy route fails after retries.
+        // oxlint-disable-next-line actual/prefer-logger-over-console
+        console.error(`Failed to load lazy-loaded module ${name}`, e);
         setError(e);
       }
     });

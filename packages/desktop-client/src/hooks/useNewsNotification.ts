@@ -56,7 +56,7 @@ export function useNewsNotification() {
 
     const release = getReleaseToNotify(
       entries,
-      window.Actual.ACTUAL_VERSION,
+      window.Actual?.ACTUAL_VERSION ?? 'unknown',
       lastSeenNewsDate,
     );
     if (!release) {
