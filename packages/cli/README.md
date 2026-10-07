@@ -121,6 +121,7 @@ Example `.actualrc.json`:
 | `query`           | Run an ActualQL query          |
 | `server`          | Server utilities and lookups   |
 | `sync`            | Refresh or inspect local cache |
+| `backup`          | Export the current budget as a ZIP archive |
 
 Run `actual <command> --help` for subcommands and options.
 
@@ -143,6 +144,9 @@ actual transactions list --account <id> \
 
 # Set budget amount ($500 = 50000 cents)
 actual budgets set-amount --month 2026-03 --category <id> --amount 50000
+
+# Export the current budget; an existing file is protected unless --overwrite is passed
+actual backup ./backups/monthly.zip
 
 # Run an ActualQL query
 actual query run --table transactions \

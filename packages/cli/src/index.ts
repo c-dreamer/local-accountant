@@ -1,6 +1,7 @@
 import { Command, Option } from 'commander';
 
 import { registerAccountsCommand } from './commands/accounts';
+import { registerBackupCommand } from './commands/backup';
 import { registerBudgetsCommand } from './commands/budgets';
 import { registerCategoriesCommand } from './commands/categories';
 import { registerCategoryGroupsCommand } from './commands/category-groups';
@@ -58,6 +59,7 @@ program
   .option('--verbose', 'Show informational messages', false);
 
 registerAccountsCommand(program);
+registerBackupCommand(program);
 registerBudgetsCommand(program);
 registerCategoriesCommand(program);
 registerCategoryGroupsCommand(program);
