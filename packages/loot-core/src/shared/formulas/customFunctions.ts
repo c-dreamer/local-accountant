@@ -10,9 +10,9 @@ import {
 import type { InterpreterState } from 'hyperformula/typings/interpreter/InterpreterState';
 import type { ProcedureAst } from 'hyperformula/typings/parser';
 
-import { getCurrency } from '#shared/currencies';
+import { DEFAULT_CURRENCY_CODE, getCurrency } from '#shared/currencies';
 import type { Currency } from '#shared/currencies';
-import { integerToAmount } from '#shared/util';
+import { getNumberFormat, integerToAmount } from '#shared/util';
 import type { NumberFormats } from '#shared/util';
 
 type CurrencySymbolPosition = 'before' | 'after';
@@ -70,13 +70,17 @@ export function clearCachedUserPreferences(): void {
 
 function getUserPreferences(): UserPreferences {
   if (!cachedUserPreferences) {
-    // If not loaded, use defaults
+    // If not loaded, use the default currency's formatting
+    const currency = getCurrency(DEFAULT_CURRENCY_CODE);
+    const { thousandsSeparator, decimalSeparator } = getNumberFormat({
+      format: currency.numberFormat,
+    });
     return {
-      currency: getCurrency('USD'),
-      numberFormat: 'comma-dot',
-      decimalPlaces: 2,
-      thousandsSeparator: ',',
-      decimalSeparator: '.',
+      currency,
+      numberFormat: currency.numberFormat,
+      decimalPlaces: currency.decimalPlaces,
+      thousandsSeparator,
+      decimalSeparator,
       locale: 'en-US',
       currencySymbolPosition: 'before',
       currencySpaceBetweenAmountAndSymbol: false,

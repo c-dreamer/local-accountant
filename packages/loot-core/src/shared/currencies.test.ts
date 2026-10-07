@@ -1,4 +1,4 @@
-import { currencies, getDecimalPlaces } from './currencies';
+import { currencies, getCurrency, getDecimalPlaces } from './currencies';
 
 describe('getDecimalPlaces', () => {
   it('returns 2 for empty string (None)', () => {
@@ -15,6 +15,15 @@ describe('getDecimalPlaces', () => {
     expect(getDecimalPlaces('USD')).toBe(2);
     expect(getDecimalPlaces('EUR')).toBe(2);
     expect(getDecimalPlaces('GBP')).toBe(2);
+  });
+
+  it('uses South African rand formatting by default', () => {
+    expect(getCurrency('ZAR')).toMatchObject({
+      symbol: 'R',
+      decimalPlaces: 2,
+      numberFormat: 'space-comma',
+      symbolFirst: true,
+    });
   });
 
   it('returns 2 as safe default for unknown codes', () => {
