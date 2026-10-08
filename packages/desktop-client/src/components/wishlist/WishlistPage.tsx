@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
@@ -8,15 +8,24 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import type {
-  LocalPrefs,
   WishlistCashEvent,
   WishlistItem,
   WishlistScenario,
 } from '@actual-app/core/types/prefs';
 
+import { Link } from '#components/common/Link';
 import { Page } from '#components/Page';
 
-import { estimateWishlistAffordability } from './affordability';
+import {
+  estimateWishlistAffordabilityByPriority,
+  isWishlistPriceStale,
+} from './affordability';
+import type { AffordabilityEstimate } from './affordability';
+import {
+  appendImportedWishlistItems,
+  parseWishlistItems,
+  serializeWishlistItems,
+} from './transfer';
 import { useWishlistLocalPref } from './useWishlistLocalPref';
 
 type ItemDraft = {
@@ -221,14 +230,7 @@ function EventEditor({
   );
 }
 
-function EstimateText({
-  item,
-  scenario,
-}: {
-  item: WishlistItem;
-  scenario: WishlistScenario | undefined;
-}) {
-  const estimate = estimateWishlistAffordability({ item, scenario });
+function EstimateText({ estimate }: { estimate: AffordabilityEstimate }) {
   if (estimate.status === 'date') {
     return (
       <Text>
@@ -252,6 +254,16 @@ function EstimateText({
       </Text>
     );
   }
+  if (estimate.reason === 'blocked-by-higher-priority') {
+    return (
+      <Text style={{ color: theme.pageTextLight }}>
+        <Trans>
+          This item is lower priority. Estimate earlier items first to avoid
+          assigning the same savings twice.
+        </Trans>
+      </Text>
+    );
+  }
   return (
     <Text style={{ color: theme.pageTextLight }}>
       <Trans>Complete the forecast inputs to see an estimated date.</Trans>
@@ -260,6 +272,11 @@ function EstimateText({
 }
 
 export function WishlistPage() {
+  const [, , scopeKey] = useWishlistLocalPref('wishlistItems');
+  return <WishlistPageForScope key={scopeKey} />;
+}
+
+function WishlistPageForScope() {
   const { t } = useTranslation();
   const [savedItems, setItems] = useWishlistLocalPref('wishlistItems');
   const items = savedItems ?? [];
@@ -284,7 +301,13 @@ export function WishlistPage() {
     scenario?.committedBillsConfirmed ?? false,
   );
   const [scenarioMessage, setScenarioMessage] = useState('');
+  const [transferMessage, setTransferMessage] = useState('');
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const estimates = estimateWishlistAffordabilityByPriority({
+    items,
+    scenario,
+  });
 
   useEffect(() => {
     setScenarioDraft(getScenarioDraft(scenario));
@@ -408,6 +431,58 @@ export function WishlistPage() {
     setItemError('');
   };
 
+  const exportItems = () => {
+    const file = new Blob([serializeWishlistItems(items)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(file);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `ledger-wishlist-${today()}.json`;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTransferMessage(
+      t('Wishlist items exported. Forecast inputs were not included.'),
+    );
+  };
+
+  const importItems = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    try {
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error(t('The wishlist file is larger than the 2 MB limit.'));
+      }
+      const imported = parseWishlistItems(await file.text());
+      const appended = appendImportedWishlistItems(items, imported, makeId);
+      setItems(appended);
+      setTransferMessage(
+        t(
+          '{{count}} wishlist items imported and appended to the priority list.',
+          {
+            count: imported.length,
+          },
+        ),
+      );
+    } catch (error) {
+      setTransferMessage(
+        error instanceof Error
+          ? error.message
+          : t('The wishlist file could not be imported.'),
+      );
+    }
+  };
+
+  const movePriority = (itemId: string, direction: -1 | 1) => {
+    const index = items.findIndex(item => item.id === itemId);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= items.length) return;
+    const next = items.slice();
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    setItems(next);
+  };
+
   return (
     <Page header={t('Wishlist')}>
       <View
@@ -433,10 +508,10 @@ export function WishlistPage() {
           <Text>
             <Trans>
               Wishlist entries stay on this device and are scoped to this budget
-              and profile. Forecast inputs are never synced or exported.
-              Retailer prices are entered and refreshed manually. Estimates use
-              only the amounts and dates you enter; no bank account or retailer
-              data is fetched.
+              and profile. Forecast inputs are never synced or included in item
+              exports. Retailer prices are entered and refreshed manually.
+              Estimates use only the amounts and dates you enter; no bank
+              account or retailer data is fetched.
             </Trans>
           </Text>
         </View>
@@ -580,6 +655,14 @@ export function WishlistPage() {
               income is expected.
             </Trans>
           </label>
+          {!incomeConfirmed && (
+            <Text role="alert" style={{ color: theme.pageTextLight }}>
+              <Trans>
+                Expected income is unconfirmed. Estimates stay unavailable until
+                you review this list and save the forecast.
+              </Trans>
+            </Text>
+          )}
           <EventEditor
             title={t('Committed bills')}
             events={bills}
@@ -604,6 +687,14 @@ export function WishlistPage() {
               bills are planned.
             </Trans>
           </label>
+          {!billsConfirmed && (
+            <Text role="alert" style={{ color: theme.pageTextLight }}>
+              <Trans>
+                Committed bills are unconfirmed. Estimates stay unavailable
+                until you review this list and save the forecast.
+              </Trans>
+            </Text>
+          )}
         </View>
 
         <View
@@ -624,10 +715,31 @@ export function WishlistPage() {
             <Text style={{ fontSize: 18, fontWeight: 600 }}>
               <Trans>Items</Trans>
             </Text>
-            <Button onPress={addItem}>
-              <Trans>Add item</Trans>
-            </Button>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <Button onPress={addItem}>
+                <Trans>Add item</Trans>
+              </Button>
+              <Button
+                variant="bare"
+                onPress={exportItems}
+                disabled={items.length === 0}
+              >
+                <Trans>Export items</Trans>
+              </Button>
+              <Button variant="bare" onPress={() => fileInput.current?.click()}>
+                <Trans>Import items</Trans>
+              </Button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept="application/json,.json"
+                onChange={importItems}
+                aria-label={t('Import wishlist items file')}
+                style={{ display: 'none' }}
+              />
+            </View>
           </View>
+          {transferMessage && <Text role="status">{transferMessage}</Text>}
 
           {items.length === 0 && (
             <Text style={{ color: theme.pageTextLight }}>
@@ -635,7 +747,7 @@ export function WishlistPage() {
             </Text>
           )}
 
-          {items.map(item => (
+          {items.map((item, index) => (
             <View
               key={item.id}
               style={{
@@ -664,13 +776,52 @@ export function WishlistPage() {
                 <Trans>Price last checked</Trans>:{' '}
                 {formatDate(item.priceCheckedDate)}
               </Text>
-              {item.sourceUrl && (
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer">
-                  <Trans>Open price source</Trans>
-                </a>
+              {isWishlistPriceStale(item.priceCheckedDate) ? (
+                <Text role="status" style={{ color: theme.pageTextLight }}>
+                  <Trans>
+                    This price is more than 30 days old or has an invalid date.
+                    Check it again before relying on the estimate.
+                  </Trans>
+                </Text>
+              ) : (
+                <Text role="status" style={{ color: theme.pageTextLight }}>
+                  <Trans>Price checked within the last 30 days.</Trans>
+                </Text>
               )}
-              <EstimateText item={item} scenario={scenario} />
+              {item.sourceUrl && (
+                <Link variant="external" to={item.sourceUrl}>
+                  <Trans>Open price source</Trans>
+                </Link>
+              )}
+              <EstimateText
+                estimate={
+                  estimates.get(item.id) ?? {
+                    status: 'unknown',
+                    reason: 'incomplete-inputs',
+                  }
+                }
+              />
               <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Button
+                  variant="bare"
+                  aria-label={t('Move {{name}} higher priority', {
+                    name: item.name,
+                  })}
+                  disabled={index === 0}
+                  onPress={() => movePriority(item.id, -1)}
+                >
+                  <Trans>Move up</Trans>
+                </Button>
+                <Button
+                  variant="bare"
+                  aria-label={t('Move {{name}} lower priority', {
+                    name: item.name,
+                  })}
+                  disabled={index === items.length - 1}
+                  onPress={() => movePriority(item.id, 1)}
+                >
+                  <Trans>Move down</Trans>
+                </Button>
                 <Button variant="bare" onPress={() => editItem(item)}>
                   <Trans>Edit</Trans>
                 </Button>

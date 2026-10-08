@@ -87,7 +87,7 @@ describe('estimateWishlistAffordability', () => {
 
     expect(result).toEqual({
       status: 'date',
-      date: '2027-02-01',
+      date: '2027-06-01',
       plannedSavingsMinor: 11_000,
     });
   });
@@ -108,17 +108,17 @@ describe('estimateWishlistAffordability', () => {
     expect(result).toEqual({ status: 'unknown', reason: 'outside-horizon' });
   });
 
-  it('applies same-day committed bills before purchases', () => {
+  it('applies same-day committed bills before income and purchases', () => {
     const result = estimateWishlistAffordability({
-      item: { ...item, priceMinor: 5_000 },
+      item: { ...item, priceMinor: 1_500 },
       scenario: {
         ...scenario,
-        spendableCashMinor: 8_000,
+        spendableCashMinor: 4_000,
         expectedIncome: [
-          { id: 'pay-1', date: '2026-10-08', amountMinor: 1_000 },
+          { id: 'pay-1', date: '2026-10-08', amountMinor: 3_000 },
         ],
         committedBills: [
-          { id: 'bill-1', date: '2026-10-08', amountMinor: 2_500 },
+          { id: 'bill-1', date: '2026-10-08', amountMinor: 3_000 },
         ],
         monthlyContributionMinor: 0,
       },
@@ -208,7 +208,7 @@ describe('estimateWishlistAffordability', () => {
     });
     expect(result.get('second')).toEqual({
       status: 'date',
-      date: '2027-01-01',
+      date: '2027-02-01',
       plannedSavingsMinor: 6_000,
     });
   });

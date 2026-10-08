@@ -94,9 +94,9 @@ function validScenario(
  * Estimate wishlist purchases in the user's explicit priority order. Current
  * spendable cash above the buffer enters one shared reserve. Each purchase
  * consumes that reserve before the next item is considered, so two items never
- * claim the same cash or contribution. On a shared date, committed bills are
- * processed before income, contributions, and purchases for a conservative
- * estimate.
+ * claim the same cash or contribution. On a shared date, committed bills
+ * consume cash before income arrives, then contributions and purchases are
+ * considered. This avoids assuming a same-day paycheck paid before a bill.
  */
 export function estimateWishlistAffordabilityByPriority({
   items,
@@ -201,7 +201,7 @@ export function estimateWishlistAffordabilityByPriority({
     const event = cashEvents.get(key);
 
     if (event) {
-      cash += event.income - event.bills;
+      cash -= event.bills;
       if (cash < scenario.safetyBufferMinor) {
         const bufferTopUp = Math.min(
           savings,
@@ -210,6 +210,7 @@ export function estimateWishlistAffordabilityByPriority({
         savings -= bufferTopUp;
         cash += bufferTopUp;
       }
+      cash += event.income;
     }
 
     while (nextContribution && dateKey(nextContribution) < key) {
