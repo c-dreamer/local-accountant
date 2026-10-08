@@ -38,6 +38,7 @@ export function PrimaryButtons() {
     '/bank-sync',
     '/settings',
     '/tools',
+    '/wishlist',
   ].some(route => location.pathname.startsWith(route));
 
   useEffect(() => {
@@ -80,6 +81,12 @@ export function PrimaryButtons() {
               indent={15}
             />
           )}
+          <SecondaryItem
+            title={t('Wishlist')}
+            Icon={SvgTag}
+            to="/wishlist"
+            indent={15}
+          />
           <SecondaryItem
             title={t('Tags')}
             Icon={SvgTag}

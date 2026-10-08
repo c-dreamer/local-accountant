@@ -118,7 +118,40 @@ export type LocalPrefs = Partial<{
    * back-to-back sync attempts.
    */
   'bankSync.lastAutomaticRun': number;
+  wishlistItems?: WishlistItem[];
+  wishlistScenario?: WishlistScenario;
 }>;
+
+/** A user-authored wishlist entry stored only in this device's app data. */
+export type WishlistItem = {
+  id: string;
+  name: string;
+  sourceUrl: string;
+  priceMinor: number;
+  currencyCode: string;
+  priceCheckedDate: string;
+  createdAt: string;
+};
+
+export type WishlistCashEvent = {
+  id: string;
+  date: string;
+  amountMinor: number;
+  description?: string;
+};
+
+/** Explicit, device-local inputs for the wishlist affordability estimate. */
+export type WishlistScenario = {
+  currencyCode: string;
+  spendableCashMinor: number | null;
+  safetyBufferMinor: number | null;
+  expectedIncome: WishlistCashEvent[];
+  expectedIncomeConfirmed: boolean;
+  committedBills: WishlistCashEvent[];
+  committedBillsConfirmed: boolean;
+  monthlyContributionMinor: number | null;
+  monthlyContributionStartDate: string;
+};
 
 export type Theme = 'light' | 'dark' | 'auto' | 'midnight' | string;
 export type DarkTheme = 'dark' | 'midnight';

@@ -20,10 +20,10 @@ test('renamed product keeps the existing user-data directory identity', async ({
     }),
   );
 
-  expect(identity.appName).toBe('LAccountant');
-  expect(identity.windowTitle).toBe('LAccountant');
+  expect(identity.appName).toBe('Ledger');
+  expect(identity.windowTitle).toBe('Ledger');
   if (process.platform === 'darwin') {
-    expect(identity.appMenuName).toBe('LAccountant');
+    expect(identity.appMenuName).toBe('Ledger');
   }
   expect(identity.userData).toBe(path.join(identity.appData, 'Actual'));
   expect(identity.appData).toContain(path.join('e2e', 'data'));

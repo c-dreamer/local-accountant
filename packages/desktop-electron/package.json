@@ -89,7 +89,7 @@
       ],
       "desktop": {
         "entry": {
-          "Name": "LAccountant",
+          "Name": "Ledger",
           "Categories": "Finance;Office",
           "Keywords": "Budget;Finance;Money;Expenses;Savings;"
         }
@@ -125,10 +125,10 @@
     "appx": {
       "identityName": "actualbudget.org.ActualBudget",
       "publisherDisplayName": "actualbudget.org",
-      "displayName": "LAccountant",
+      "displayName": "Ledger",
       "publisher": "CN=19454997-90E1-4473-879D-96D6A77A6056"
     },
     "npmRebuild": false
   },
-  "productName": "LAccountant"
+  "productName": "Ledger"
 }

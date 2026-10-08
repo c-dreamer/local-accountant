@@ -46,6 +46,7 @@ import { Titlebar } from './Titlebar';
 import { Tour } from './tour/Tour';
 import { TourAutoOffer } from './tour/TourAutoOffer';
 import { TourProvider } from './tour/TourProvider';
+import { WishlistPage } from './wishlist/WishlistPage';
 
 function NarrowNotSupported({
   redirectTo = '/budget',
@@ -369,6 +370,14 @@ export function FinancesApp() {
                       }
                     />
                     <Route path="/tags" element={<ManageTagsPage />} />
+                    <Route
+                      path="/wishlist"
+                      element={
+                        <NarrowNotSupported>
+                          <WishlistPage />
+                        </NarrowNotSupported>
+                      }
+                    />
                     <Route
                       path="/notifications"
                       element={<NotificationsPage />}

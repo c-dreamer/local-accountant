@@ -1,4 +1,4 @@
-# LAccountant Desktop Build Handoff
+# Ledger Desktop Build Handoff
 
 Use this guide to build the `local-accountant` desktop fork on Linux or choose the matching Mac package.
 
@@ -38,7 +38,7 @@ sudo flatpak install org.flatpak.Builder -y
 yarn build:desktop --skip-translations
 ```
 
-The Linux configuration builds AppImage for x64 and arm64, and Flatpak for x64. Artifacts are written to `packages/desktop-electron/dist/`; their names follow the package's `LAccountant-linux-${arch}.${ext}` pattern. The equivalent command used by the Electron packaging workflow is `./bin/package-electron --skip-translations`.
+The Linux configuration builds AppImage for x64 and arm64, and Flatpak for x64. Artifacts are written to `packages/desktop-electron/dist/`; their names follow the package's `Ledger-linux-${arch}.${ext}` pattern. The equivalent command used by the Electron packaging workflow is `./bin/package-electron --skip-translations`.
 
 The Electron PR workflow still has artifact upload paths beginning with `Actual-linux-` and ignores missing files. Until those paths are updated, inspect `dist/` directly rather than relying on uploaded Linux artifacts.
 
@@ -57,7 +57,7 @@ xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" -- yarn e2e:des
 
 ## Mac Package Choice
 
-This Mac is `arm64`, so use `LAccountant-mac-arm64.dmg` on Apple Silicon. Use `LAccountant-mac-x64.dmg` on Intel Macs. Local Mac builds are not Developer ID signed or notarized.
+This Mac is `arm64`, so use `Ledger-mac-arm64.dmg` on Apple Silicon. Use `Ledger-mac-x64.dmg` on Intel Macs. Local Mac builds are not Developer ID signed or notarized.
 
 ## Preserve Existing Data Identity
 

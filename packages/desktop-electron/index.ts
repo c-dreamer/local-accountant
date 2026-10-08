@@ -43,7 +43,7 @@ import {
 import './security';
 
 // Preserve the default user-data directory from existing Actual installs even
-// though the packaged display name is now LAccountant.
+// though the packaged display name is now Ledger.
 const LEGACY_USER_DATA_DIR_NAME = 'Actual';
 
 const BUILD_ROOT = `${__dirname}/..`;

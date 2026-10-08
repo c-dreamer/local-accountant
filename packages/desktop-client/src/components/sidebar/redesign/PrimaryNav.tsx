@@ -33,6 +33,7 @@ export function PrimaryNav() {
     >
       <NavRow title={t('Budget')} Icon={SvgWallet} to="/budget" />
       <NavRow title={t('Reports')} Icon={SvgReports} to="/reports" />
+      <NavRow title={t('Wishlist')} Icon={SvgTag} to="/wishlist" />
       <NavRow title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
       <NavRow title={t('Payees')} Icon={SvgUserGroup} to="/payees" />
       <NavRow title={t('Rules')} Icon={SvgTuning} to="/rules" />
