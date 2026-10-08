@@ -1,12 +1,15 @@
+import { spawn } from 'node:child_process';
+import { createWriteStream } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { _electron, test as base } from '@playwright/test';
+import { _electron, test as base, chromium } from '@playwright/test';
 import type { ElectronApplication, Page, TestInfo } from '@playwright/test';
 
 type ElectronFixtures = {
   electronApp: ElectronApplication;
   electronPage: Page;
+  packagedPage: Page;
 };
 
 type ElectronOptions = {
@@ -37,50 +40,13 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
       await writeFile(documentDir, 'not a directory');
     }
 
-    const appImagePath = process.env.LEDGER_E2E_APPIMAGE;
-    let executablePath: string | undefined;
-    let appImageLogPath: string | undefined;
-    let args: string[];
-    if (appImagePath) {
-      executablePath = path.resolve(testDataDir, 'launch-appimage.sh');
-      appImageLogPath = path.resolve(testDataDir, 'appimage-output.log');
-      await writeFile(
-        executablePath,
-        [
-          '#!/usr/bin/env bash',
-          'set -euo pipefail',
-          'exec > >(tee -a "$LEDGER_E2E_APPIMAGE_LOG")',
-          'exec 2> >(tee -a "$LEDGER_E2E_APPIMAGE_LOG" >&2)',
-          'args=()',
-          'for arg in "$@"; do',
-          '  if [[ "$arg" != "--no-sandbox" ]]; then args+=("$arg"); fi',
-          'done',
-          'exec "$LEDGER_E2E_APPIMAGE" --appimage-extract-and-run "${' +
-            'args[@]}"',
-          '',
-        ].join('\n'),
-        { mode: 0o700 },
-      );
-      args = [
-        '--disable-gpu',
-        `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
-      ];
-    } else {
-      args = [
+    const app = await _electron.launch({
+      args: [
         '.',
         `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
-      ];
-    }
-
-    const app = await _electron.launch({
-      ...(executablePath ? { executablePath } : {}),
-      ...(appImagePath ? { chromiumSandbox: true } : {}),
-      args,
+      ],
       env: {
         ...process.env,
-        ...(appImageLogPath
-          ? { LEDGER_E2E_APPIMAGE_LOG: appImageLogPath }
-          : {}),
         ACTUAL_ELECTRON_APP_DATA_DIR: path.resolve(
           testDataDir,
           'electron-app-data',
@@ -102,5 +68,116 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
   electronPage: async ({ electronApp }, use) => {
     const page = await electronApp.firstWindow();
     await use(page);
+  },
+
+  packagedPage: async (fixtureOptions, use, testInfo: TestInfo) => {
+    void fixtureOptions;
+    const appImagePath = process.env.LEDGER_E2E_APPIMAGE;
+    if (!appImagePath) {
+      throw new Error('LEDGER_E2E_APPIMAGE is required for packaged UI tests');
+    }
+
+    const uniqueTestId = testInfo.testId.replace(/[^\w-]/g, '-');
+    const testDataDir = path.join('e2e/data/', uniqueTestId);
+    await rm(testDataDir, { recursive: true, force: true });
+    await mkdir(testDataDir, { recursive: true });
+
+    const appImageLogPath = path.resolve(testDataDir, 'appimage-output.log');
+    const logStream = createWriteStream(appImageLogPath, { flags: 'w' });
+    const app = spawn(
+      appImagePath,
+      [
+        '--appimage-extract-and-run',
+        '--disable-gpu',
+        '--remote-debugging-port=0',
+        `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
+      ],
+      {
+        env: {
+          ...process.env,
+          ACTUAL_ELECTRON_APP_DATA_DIR: path.resolve(
+            testDataDir,
+            'electron-app-data',
+          ),
+          ACTUAL_DOCUMENT_DIR: testDataDir,
+          ACTUAL_DATA_DIR: testDataDir,
+          EXECUTION_CONTEXT: 'playwright',
+          NODE_ENV: 'development',
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    app.stdout.pipe(logStream, { end: false });
+    app.stderr.pipe(logStream, { end: false });
+
+    let browser:
+      | Awaited<ReturnType<typeof chromium.connectOverCDP>>
+      | undefined;
+    let testPassed = false;
+    let stderrTail = '';
+    try {
+      const endpoint = await new Promise<string>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(
+            new Error(
+              `Timed out waiting for AppImage DevTools. See ${appImageLogPath}`,
+            ),
+          );
+        }, 45_000);
+
+        app.stderr.on('data', (chunk: Buffer) => {
+          stderrTail = (stderrTail + chunk.toString()).slice(-8192);
+          const match = stderrTail.match(
+            /DevTools listening on (ws:\/\/[^\s]+)/,
+          );
+          if (match) {
+            clearTimeout(timeout);
+            resolve(match[1]);
+          }
+        });
+        app.once('error', error => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+        app.once('exit', (code, signal) => {
+          clearTimeout(timeout);
+          reject(
+            new Error(
+              `AppImage exited before DevTools was ready (code=${code}, signal=${signal}). See ${appImageLogPath}`,
+            ),
+          );
+        });
+      });
+
+      browser = await chromium.connectOverCDP(endpoint, { timeout: 30_000 });
+      const context = browser.contexts()[0];
+      if (!context) {
+        throw new Error('AppImage DevTools did not expose a browser context');
+      }
+      const page =
+        context.pages()[0] ??
+        (await context.waitForEvent('page', { timeout: 30_000 }));
+      await use(page);
+      testPassed = true;
+    } finally {
+      await browser?.close().catch(() => undefined);
+      if (app.exitCode === null && app.signalCode === null) {
+        const exited = new Promise<void>(resolve => {
+          app.once('exit', () => resolve());
+          app.kill('SIGTERM');
+        });
+        await Promise.race([
+          exited,
+          new Promise(resolve => setTimeout(resolve, 5_000)),
+        ]);
+        if (app.exitCode === null && app.signalCode === null) {
+          app.kill('SIGKILL');
+        }
+      }
+      logStream.end();
+      if (testPassed) {
+        await rm(testDataDir, { recursive: true, force: true });
+      }
+    }
   },
 });
