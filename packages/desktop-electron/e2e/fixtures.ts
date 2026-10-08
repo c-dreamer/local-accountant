@@ -38,19 +38,38 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
     }
 
     const appImagePath = process.env.LEDGER_E2E_APPIMAGE;
-    const args = appImagePath
-      ? [
-          '--appimage-extract-and-run',
-          '--disable-gpu',
-          `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
-        ]
-      : [
-          '.',
-          `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
-        ];
+    let executablePath: string | undefined;
+    let args: string[];
+    if (appImagePath) {
+      executablePath = path.resolve(testDataDir, 'launch-appimage.sh');
+      await writeFile(
+        executablePath,
+        [
+          '#!/usr/bin/env bash',
+          'set -euo pipefail',
+          'args=()',
+          'for arg in "$@"; do',
+          '  if [[ "$arg" != "--no-sandbox" ]]; then args+=("$arg"); fi',
+          'done',
+          'exec "$LEDGER_E2E_APPIMAGE" --appimage-extract-and-run "${' +
+            'args[@]}"',
+          '',
+        ].join('\n'),
+        { mode: 0o700 },
+      );
+      args = [
+        '--disable-gpu',
+        `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
+      ];
+    } else {
+      args = [
+        '.',
+        `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
+      ];
+    }
 
     const app = await _electron.launch({
-      ...(appImagePath ? { executablePath: appImagePath } : {}),
+      ...(executablePath ? { executablePath } : {}),
       args,
       env: {
         ...process.env,
