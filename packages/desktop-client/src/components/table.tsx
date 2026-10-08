@@ -39,10 +39,12 @@ import { useFormat } from '#hooks/useFormat';
 import type { FormatType } from '#hooks/useFormat';
 import { useMergedRefs } from '#hooks/useMergedRefs';
 import { useModalState } from '#hooks/useModalState';
+import { usePrivacyMode } from '#hooks/usePrivacyMode';
 import {
   AvoidRefocusScrollProvider,
   useProperFocus,
 } from '#hooks/useProperFocus';
+import { useSecondaryCurrency } from '#hooks/useSecondaryCurrency';
 import { useSelectedItems } from '#hooks/useSelected';
 import { useSheetValue } from '#hooks/useSheetValue';
 import type {
@@ -746,9 +748,22 @@ export function SheetCell<
     }
   });
   const format = useFormat();
+  const secondaryCurrency = useSecondaryCurrency();
+  const isPrivacyEnabled = usePrivacyMode();
+  // Hovering an amount shows it in the second currency (not while editing or
+  // in privacy mode). A caller's own `title` takes precedence.
+  const secondaryTitle =
+    type === 'financial' &&
+    secondaryCurrency &&
+    !isPrivacyEnabled &&
+    !props.exposed &&
+    typeof sheetValue === 'number'
+      ? secondaryCurrency.format(sheetValue)
+      : undefined;
 
   return (
     <Cell
+      title={secondaryTitle}
       valueStyle={
         getValueStyle
           ? { ...valueStyle, ...getValueStyle(sheetValue) }
