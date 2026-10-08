@@ -70,8 +70,7 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
     await use(page);
   },
 
-  packagedPage: async (fixtureOptions, use, testInfo: TestInfo) => {
-    void fixtureOptions;
+  packagedPage: async ({ blockDocumentDir }, use, testInfo: TestInfo) => {
     const appImagePath = process.env.LEDGER_E2E_APPIMAGE;
     if (!appImagePath) {
       throw new Error('LEDGER_E2E_APPIMAGE is required for packaged UI tests');
@@ -81,6 +80,12 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
     const testDataDir = path.join('e2e/data/', uniqueTestId);
     await rm(testDataDir, { recursive: true, force: true });
     await mkdir(testDataDir, { recursive: true });
+
+    let documentDir = testDataDir;
+    if (blockDocumentDir) {
+      documentDir = path.join(testDataDir, 'blocked');
+      await writeFile(documentDir, 'not a directory');
+    }
 
     const appImageLogPath = path.resolve(testDataDir, 'appimage-output.log');
     const logStream = createWriteStream(appImageLogPath, { flags: 'w' });
@@ -99,7 +104,7 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
             testDataDir,
             'electron-app-data',
           ),
-          ACTUAL_DOCUMENT_DIR: testDataDir,
+          ACTUAL_DOCUMENT_DIR: documentDir,
           ACTUAL_DATA_DIR: testDataDir,
           EXECUTION_CONTEXT: 'playwright',
           NODE_ENV: 'development',
