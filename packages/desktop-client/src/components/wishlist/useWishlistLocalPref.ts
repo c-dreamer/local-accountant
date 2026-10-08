@@ -34,7 +34,7 @@ export function wishlistLocalStorageKey({
 /** Device-local wishlist data scoped to both the signed-in profile and budget. */
 export function useWishlistLocalPref<K extends WishlistPrefName>(prefName: K) {
   const [budgetId] = useMetadataPref('id');
-  const profileId = useSelector(state => state.users.data?.userId);
+  const profileId = useSelector(state => state.user.data?.userId);
   const key = wishlistLocalStorageKey({ profileId, budgetId, prefName });
 
   const [value, setValue] = useLocalStorage<LocalPrefs[K]>(key, undefined, {

@@ -722,7 +722,7 @@ function WishlistPageForScope() {
               <Button
                 variant="bare"
                 onPress={exportItems}
-                disabled={items.length === 0}
+                isDisabled={items.length === 0}
               >
                 <Trans>Export items</Trans>
               </Button>
@@ -807,7 +807,7 @@ function WishlistPageForScope() {
                   aria-label={t('Move {{name}} higher priority', {
                     name: item.name,
                   })}
-                  disabled={index === 0}
+                  isDisabled={index === 0}
                   onPress={() => movePriority(item.id, -1)}
                 >
                   <Trans>Move up</Trans>
@@ -817,7 +817,7 @@ function WishlistPageForScope() {
                   aria-label={t('Move {{name}} lower priority', {
                     name: item.name,
                   })}
-                  disabled={index === items.length - 1}
+                  isDisabled={index === items.length - 1}
                   onPress={() => movePriority(item.id, 1)}
                 >
                   <Trans>Move down</Trans>
