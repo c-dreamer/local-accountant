@@ -37,11 +37,21 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
       await writeFile(documentDir, 'not a directory');
     }
 
+    const appImagePath = process.env.LEDGER_E2E_APPIMAGE;
+    const args = appImagePath
+      ? [
+          '--appimage-extract-and-run',
+          '--disable-gpu',
+          `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
+        ]
+      : [
+          '.',
+          `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
+        ];
+
     const app = await _electron.launch({
-      args: [
-        '.',
-        `--user-data-dir=${path.resolve(testDataDir, 'electron-user-data')}`,
-      ],
+      ...(appImagePath ? { executablePath: appImagePath } : {}),
+      args,
       env: {
         ...process.env,
         ACTUAL_ELECTRON_APP_DATA_DIR: path.resolve(

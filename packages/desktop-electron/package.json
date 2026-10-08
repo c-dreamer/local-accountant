@@ -96,6 +96,11 @@
       },
       "executableName": "actual"
     },
+    "appImage": {
+      "executableArgs": [
+        "--"
+      ]
+    },
     "flatpak": {
       "runtimeVersion": "24.08",
       "baseVersion": "24.08"

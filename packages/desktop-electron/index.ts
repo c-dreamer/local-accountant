@@ -534,6 +534,7 @@ async function createWindow() {
       nodeIntegrationInWorker: false,
       nodeIntegrationInSubFrames: false,
       contextIsolation: true,
+      sandbox: true,
       preload: __dirname + '/preload.js',
     },
     autoHideMenuBar: true, // Alt key shows the menu

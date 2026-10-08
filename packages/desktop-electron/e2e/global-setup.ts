@@ -6,6 +6,10 @@ import { execFileSync } from 'node:child_process';
 // `spawn ETXTBSY`. The install script exits immediately when the binary is
 // already present.
 function globalSetup() {
+  if (process.env.LEDGER_E2E_APPIMAGE) {
+    return;
+  }
+
   execFileSync(process.execPath, [require.resolve('electron/install.js')], {
     stdio: 'inherit',
   });
