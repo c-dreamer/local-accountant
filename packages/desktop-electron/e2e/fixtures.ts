@@ -39,14 +39,18 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
 
     const appImagePath = process.env.LEDGER_E2E_APPIMAGE;
     let executablePath: string | undefined;
+    let appImageLogPath: string | undefined;
     let args: string[];
     if (appImagePath) {
       executablePath = path.resolve(testDataDir, 'launch-appimage.sh');
+      appImageLogPath = path.resolve(testDataDir, 'appimage-output.log');
       await writeFile(
         executablePath,
         [
           '#!/usr/bin/env bash',
           'set -euo pipefail',
+          'exec > >(tee -a "$LEDGER_E2E_APPIMAGE_LOG")',
+          'exec 2> >(tee -a "$LEDGER_E2E_APPIMAGE_LOG" >&2)',
           'args=()',
           'for arg in "$@"; do',
           '  if [[ "$arg" != "--no-sandbox" ]]; then args+=("$arg"); fi',
@@ -70,9 +74,13 @@ export const test = base.extend<ElectronFixtures & ElectronOptions>({
 
     const app = await _electron.launch({
       ...(executablePath ? { executablePath } : {}),
+      ...(appImagePath ? { chromiumSandbox: true } : {}),
       args,
       env: {
         ...process.env,
+        ...(appImageLogPath
+          ? { LEDGER_E2E_APPIMAGE_LOG: appImageLogPath }
+          : {}),
         ACTUAL_ELECTRON_APP_DATA_DIR: path.resolve(
           testDataDir,
           'electron-app-data',
