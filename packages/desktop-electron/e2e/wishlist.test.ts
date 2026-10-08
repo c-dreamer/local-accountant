@@ -20,7 +20,9 @@ test('opens the first-run page and adds a synthetic wishlist item', async ({
   await packagedPage.getByRole('link', { name: 'Wishlist' }).click();
 
   await expect(
-    packagedPage.getByRole('heading', { name: 'Wishlist' }),
+    packagedPage.getByText('Local-only wishlist and estimates', {
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
     packagedPage.getByText('Your wishlist is empty. Add an item to start.'),
