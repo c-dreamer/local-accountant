@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import type { ReactNode } from 'react';
 
+import type * as Currencies from '@actual-app/core/shared/currencies';
+
 import { resetTestProviders } from './mocks';
 
 global.IS_TESTING = true;
@@ -39,6 +41,14 @@ vi.mock('react-virtualized-auto-sizer', () => {
     default: AutoSizer,
   };
 });
+
+// This fork defaults to ZAR formatting (`1 234,56`). Run the client tests on
+// upstream's "no currency" default so its tests keep passing on every sync;
+// the ZAR default is covered by loot-core's currency and formula tests.
+vi.mock('@actual-app/core/shared/currencies', async importOriginal => ({
+  ...(await importOriginal<typeof Currencies>()),
+  DEFAULT_CURRENCY_CODE: '',
+}));
 
 global.Date.now = () => 123456789;
 
