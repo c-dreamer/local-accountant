@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import cors from 'cors';
+import createDebug from 'debug';
 import express from 'express';
 
 import { bootstrap } from './account-db';
@@ -21,10 +22,13 @@ import * as syncApp from './app-sync';
 import { config } from './load-config';
 import { applyRateLimiters } from './util/rate-limit';
 
+const debugSensitive = createDebug('actual-sensitive:server');
+
 const app = express();
 
 process.on('unhandledRejection', reason => {
-  console.log('Rejection:', reason);
+  console.log('Unhandled rejection');
+  debugSensitive('Unhandled rejection: %O', reason);
 });
 
 app.disable('x-powered-by');
